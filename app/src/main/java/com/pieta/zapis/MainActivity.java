@@ -1,18 +1,23 @@
 package com.pieta.zapis;
 
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     final String FILENAME = "data.csv";
 
     final int MSG_START_TIMER = 0;
@@ -21,13 +26,14 @@ public class MainActivity extends AppCompatActivity {
     final int MSG_PAUSE_TIMER = 3;
     final int REFRESH_RATE = 60;
 
+    private Button activitySwap;
     private ImageButton bStart, bStop, bPause, bUnpause;
 
     private TextView editName, timeName;
     private TextView timeText;
     private Timer timer;
 
-    Date currentTime;
+    Date today = new Date();
 
 
     @Override
@@ -41,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
         timeName = findViewById(R.id.nameText);
         timeName.setVisibility(View.GONE);
 
+        activitySwap = findViewById(R.id.activitySwap);
         bStart = findViewById(R.id.bStart);
         bStop = findViewById(R.id.bStop);
         bPause = findViewById(R.id.bPause);
@@ -71,10 +78,9 @@ public class MainActivity extends AppCompatActivity {
                     mHandler.removeMessages(MSG_UPDATE_TIMER); // no more updates.
                     String txt = parseTime(timer.getTime());
                     timeText.setText(txt);
-                    currentTime = Calendar.getInstance().getTime();
+                    today = Calendar.getInstance().getTime();
                     save(timer.getTime());
                     timer.stop();//stop timer
-
                     break;
 
                 case MSG_PAUSE_TIMER:
@@ -99,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
         bStart.setVisibility(View.GONE);
         bStop.setVisibility(View.VISIBLE);
         bPause.setVisibility(View.VISIBLE);
+        activitySwap.setVisibility(View.GONE);
 
         String tmp = editName.getText().toString();
         timeName.setText(tmp);
@@ -112,13 +119,18 @@ public class MainActivity extends AppCompatActivity {
         bPause.setVisibility(View.GONE);
         bUnpause.setVisibility(View.GONE);
         bStart.setVisibility(View.VISIBLE);
+        activitySwap.setVisibility(View.VISIBLE);
 
         editName.setVisibility(View.VISIBLE);
         timeName.setVisibility(View.GONE);
     }
 
     private void save(long time){
-        String out = timeName.getText().toString()+","+time+","+currentTime.toString();
+        LocalDate localDate = today.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        int day = localDate.getDayOfMonth();
+        int month = localDate.getMonthValue();
+        int year = localDate.getYear();
+        String out = timeName.getText().toString()+","+time+","+day+","+month+","+year;
         FileHandler.writeToFile(out, FILENAME, this);
     }
 
@@ -139,8 +151,10 @@ public class MainActivity extends AppCompatActivity {
         int seconds = (int) (time / 1000);
         int minutes = seconds / 60;
         seconds     = seconds % 60;
+        time        = (time % 1000)/10;
 
-        return String.format("%d:%02d", minutes, seconds);
+
+        return String.format("%d:%02d:%02d", minutes, seconds, time);
     }
 
 }
